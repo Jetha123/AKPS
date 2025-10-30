@@ -1,0 +1,1032 @@
+######## LINEAR TREGRESSION #########
+import numpy as np
+
+# Step 1: Input number of data points
+n = int(input("Enter the number of data points: "))
+
+# Step 2: Input X and Y values
+X = []
+Y = []
+print("\nEnter the values:")
+for i in range(n):
+    x = float(input(f"X[{i+1}]: "))
+    y = float(input(f"Y[{i+1}]: "))
+    X.append(x)
+    Y.append(y)
+
+# Convert to numpy arrays
+X = np.array(X)
+Y = np.array(Y)
+
+# Step 3: Calculate slope (m) and intercept (c)
+mean_x = np.mean(X)
+mean_y = np.mean(Y)
+m = np.sum((X - mean_x) * (Y - mean_y)) / np.sum((X - mean_x) ** 2)
+c = mean_y - m * mean_x
+
+print(f"\nLinear Regression Equation: y = {m:.2f}x + {c:.2f}")
+
+# Step 4: Predict Y for a new X
+x_new = float(input("\nEnter a new value of X to predict Y: "))
+y_pred = m * x_new + c
+print(f"Predicted Y for X = {x_new}: {y_pred:.2f}")
+
+Output: Enter the number of data points: 4
+Enter the values:
+X[1]: 12
+Y[1]: 12
+X[2]: 34
+Y[2]: 12
+X[3]: 2
+Y[3]: 5
+X[4]: 14
+Y[4]: 23
+
+Linear Regression Equation: y = 0.14x + 10.76
+
+Enter a new value of X to predict Y: 23
+Predicted Y for X = 23.0: 14.09
+
+########## MULTIVARIATE LINEAR REGRESSION ###########
+import numpy as np
+
+# Step 1: Input number of data points and features
+n = int(input("Enter number of data points: "))
+m = int(input("Enter number of independent variables (features): "))
+
+# Step 2: Input X values (independent variables)
+print("\nEnter values for each feature (space separated):")
+X = []
+for i in range(n):
+    row = list(map(float, input(f"Data point {i+1}: ").split()))
+    if len(row) != m:
+        print(f"❌ Please enter exactly {m} values.")
+        exit()
+    X.append(row)
+
+# Step 3: Input Y values (dependent variable)
+Y = []
+print("\nEnter values of dependent variable Y:")
+for i in range(n):
+    Y.append(float(input(f"Y[{i+1}]: ")))
+
+# Convert to numpy arrays
+X = np.array(X)
+Y = np.array(Y).reshape(n, 1)
+
+# Step 4: Add a column of ones to X for intercept term
+X = np.hstack((np.ones((n, 1)), X))
+
+# Step 5: Calculate coefficients using Normal Equation
+B = np.linalg.inv(X.T @ X) @ X.T @ Y
+
+# Step 6: Display coefficients
+print("\nRegression Coefficients (B):")
+for i, b in enumerate(B):
+    if i == 0:
+        print(f"Intercept (b0): {b[0]:.3f}")
+    else:
+        print(f"Coefficient b{i}: {b[0]:.3f}")
+
+# Step 7: Predict Y for new input
+print("\nEnter new values for prediction (space separated):")
+x_new = list(map(float, input().split()))
+if len(x_new) != m:
+    print(f"❌ Please enter exactly {m} values.")
+    exit()
+
+# Add 1 for intercept
+x_new = np.array([1] + x_new)
+y_pred = x_new @ B
+print(f"\nPredicted value of Y: {y_pred.item():.3f}")
+
+OUTPUT: Enter number of data points: 2
+Enter number of independent variables (features): 2
+
+Enter values for each feature (space separated):
+Data point 1: 1 3
+Data point 2: 3 6
+
+Enter values of dependent variable Y:
+Y[1]: 3
+Y[2]: 3
+
+Regression Coefficients (B):
+Intercept (b0): 2.250
+Coefficient b1: 0.750
+Coefficient b2: -0.562
+
+Enter new values for prediction (space separated):
+2 7
+
+Predicted value of Y: -0.188
+
+###############LOGISTIC REGRESSION############
+import numpy as np
+
+# Sigmoid function
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+# Logistic Regression (Gradient Descent)
+def logistic_regression(X, Y, lr=0.01, epochs=1000):
+    n = len(X)
+    w = 0
+    b = 0
+
+    for _ in range(epochs):
+        z = w * X + b
+        A = sigmoid(z)
+
+        # Gradients
+        dw = (1 / n) * np.sum((A - Y) * X)
+        db = (1 / n) * np.sum(A - Y)
+
+        # Update parameters
+        w -= lr * dw
+        b -= lr * db
+
+    return w, b
+
+# ---- User Input ----
+n = int(input("Enter number of data points: "))
+
+X = []
+Y = []
+
+print("\nEnter X (feature) and Y (0 or 1) values:")
+for i in range(n):
+    x = float(input(f"X[{i+1}]: "))
+    y = int(input(f"Y[{i+1}]: "))
+    X.append(x)
+    Y.append(y)
+
+X = np.array(X)
+Y = np.array(Y)
+
+# Train model
+w, b = logistic_regression(X, Y)
+
+# Prediction
+x_new = float(input("\nEnter new value of X to predict: "))
+y_prob = sigmoid(w * x_new + b)
+y_pred = 1 if y_prob >= 0.5 else 0
+
+# Convert y_prob to scalar
+y_prob = float(y_prob)
+
+print(f"\nPredicted Probability: {y_prob:.3f}")
+print(f"Predicted Class: {y_pred}")
+
+OUTPUT: 
+Enter number of data points: 3
+
+Enter X (feature) and Y (0 or 1) values:
+X[1]: 1
+Y[1]: 0
+X[2]: 4
+Y[2]: 1
+X[3]: 5
+Y[3]: 0
+
+Enter new value of X to predict: 6
+
+Predicted Probability: 0.422
+Predicted Class: 0
+
+############ CART ##############
+
+import numpy as np
+
+# Function to calculate Gini Impurity
+def gini_index(groups, classes):
+    n_instances = float(sum([len(group) for group in groups]))
+    gini = 0.0
+
+    for group in groups:
+        size = float(len(group))
+        if size == 0:
+            continue
+        score = 0.0
+        # Count of each class in group
+        for class_val in classes:
+            p = [row[-1] for row in group].count(class_val) / size
+            score += p * p
+        # Weighted gini impurity
+        gini += (1.0 - score) * (size / n_instances)
+    return gini
+
+
+# Split dataset based on a feature and threshold
+def test_split(index, value, dataset):
+    left, right = [], []
+    for row in dataset:
+        if row[index] < value:
+            left.append(row)
+        else:
+            right.append(row)
+    return left, right
+
+
+# Select the best split using Gini Index
+def get_best_split(dataset):
+    class_values = list(set(row[-1] for row in dataset))
+    b_index, b_value, b_score, b_groups = 999, 999, 999, None
+
+    for index in range(len(dataset[0]) - 1):
+        for row in dataset:
+            groups = test_split(index, row[index], dataset)
+            gini = gini_index(groups, class_values)
+            if gini < b_score:
+                b_index, b_value, b_score, b_groups = index, row[index], gini, groups
+
+    return {'index': b_index, 'value': b_value, 'groups': b_groups}
+
+
+# Create a terminal node
+def to_terminal(group):
+    outcomes = [row[-1] for row in group]
+    return max(set(outcomes), key=outcomes.count)
+
+
+# Recursive splitting
+def split(node, max_depth, min_size, depth):
+    left, right = node['groups']
+    del(node['groups'])
+
+    # No split
+    if not left or not right:
+        node['left'] = node['right'] = to_terminal(left + right)
+        return
+
+    # Check for max depth
+    if depth >= max_depth:
+        node['left'], node['right'] = to_terminal(left), to_terminal(right)
+        return
+
+    # Left child
+    if len(left) <= min_size:
+        node['left'] = to_terminal(left)
+    else:
+        node['left'] = get_best_split(left)
+        split(node['left'], max_depth, min_size, depth + 1)
+
+    # Right child
+    if len(right) <= min_size:
+        node['right'] = to_terminal(right)
+    else:
+        node['right'] = get_best_split(right)
+        split(node['right'], max_depth, min_size, depth + 1)
+
+
+# Build CART Tree
+def build_tree(train, max_depth, min_size):
+    root = get_best_split(train)
+    split(root, max_depth, min_size, 1)
+    return root
+
+
+# Predict function
+def predict(node, row):
+    if row[node['index']] < node['value']:
+        if isinstance(node['left'], dict):
+            return predict(node['left'], row)
+        else:
+            return node['left']
+    else:
+        if isinstance(node['right'], dict):
+            return predict(node['right'], row)
+        else:
+            return node['right']
+
+
+# ------------- User Input Section -------------
+n = int(input("Enter number of data points: "))
+dataset = []
+
+print("\nEnter feature (X) and label (Y - 0/1) values:")
+for i in range(n):
+    x = float(input(f"X[{i+1}]: "))
+    y = int(input(f"Y[{i+1}]: "))
+    dataset.append([x, y])
+
+max_depth = int(input("\nEnter max depth of tree (e.g. 3): "))
+min_size = int(input("Enter minimum group size (e.g. 1): "))
+
+# Build CART model
+tree = build_tree(dataset, max_depth, min_size)
+
+# Prediction
+x_new = float(input("\nEnter new X value to predict class: "))
+prediction = predict(tree, [x_new])
+print(f"\nPredicted Class: {prediction}")
+
+OUTPUT:
+Enter number of data points: 3
+
+Enter feature (X) and label (Y - 0/1) values:
+X[1]: 3
+Y[1]: 1
+X[2]: 4
+Y[2]: 0
+X[3]: 3
+Y[3]: 5
+
+Enter max depth of tree (e.g. 3): 4
+Enter minimum group size (e.g. 1): 4
+
+Enter new X value to predict class: 3
+
+Predicted Class: 1
+
+
+##################BAGGING###########
+import random
+import numpy as np
+
+# Function to split dataset randomly for bagging
+def subsample(dataset, ratio):
+    sample = []
+    n_sample = round(len(dataset) * ratio)
+    while len(sample) < n_sample:
+        index = random.randrange(len(dataset))
+        sample.append(dataset[index])
+    return sample
+
+
+# Function to calculate Gini Impurity
+def gini_index(groups, classes):
+    n_instances = float(sum([len(group) for group in groups]))
+    gini = 0.0
+    for group in groups:
+        size = float(len(group))
+        if size == 0:
+            continue
+        score = 0.0
+        for class_val in classes:
+            p = [row[-1] for row in group].count(class_val) / size
+            score += p * p
+        gini += (1.0 - score) * (size / n_instances)
+    return gini
+
+
+# Split dataset
+def test_split(index, value, dataset):
+    left, right = [], []
+    for row in dataset:
+        if row[index] < value:
+            left.append(row)
+        else:
+            right.append(row)
+    return left, right
+
+
+# Get best split
+def get_best_split(dataset):
+    class_values = list(set(row[-1] for row in dataset))
+    b_index, b_value, b_score, b_groups = 999, 999, 999, None
+    for index in range(len(dataset[0]) - 1):
+        for row in dataset:
+            groups = test_split(index, row[index], dataset)
+            gini = gini_index(groups, class_values)
+            if gini < b_score:
+                b_index, b_value, b_score, b_groups = index, row[index], gini, groups
+    return {'index': b_index, 'value': b_value, 'groups': b_groups}
+
+
+# Terminal node
+def to_terminal(group):
+    outcomes = [row[-1] for row in group]
+    return max(set(outcomes), key=outcomes.count)
+
+
+# Split node recursively
+def split(node, max_depth, min_size, depth):
+    left, right = node['groups']
+    del(node['groups'])
+    if not left or not right:
+        node['left'] = node['right'] = to_terminal(left + right)
+        return
+    if depth >= max_depth:
+        node['left'], node['right'] = to_terminal(left), to_terminal(right)
+        return
+    if len(left) <= min_size:
+        node['left'] = to_terminal(left)
+    else:
+        node['left'] = get_best_split(left)
+        split(node['left'], max_depth, min_size, depth + 1)
+    if len(right) <= min_size:
+        node['right'] = to_terminal(right)
+    else:
+        node['right'] = get_best_split(right)
+        split(node['right'], max_depth, min_size, depth + 1)
+
+
+# Build tree
+def build_tree(train, max_depth, min_size):
+    root = get_best_split(train)
+    split(root, max_depth, min_size, 1)
+    return root
+
+
+# Make prediction
+def predict(tree, row):
+    if row[tree['index']] < tree['value']:
+        if isinstance(tree['left'], dict):
+            return predict(tree['left'], row)
+        else:
+            return tree['left']
+    else:
+        if isinstance(tree['right'], dict):
+            return predict(tree['right'], row)
+        else:
+            return tree['right']
+
+
+# Bagging Algorithm
+def bagging_predict(trees, row):
+    predictions = [predict(tree, row) for tree in trees]
+    return max(set(predictions), key=predictions.count)
+
+
+def bagging(train, test, max_depth, min_size, sample_ratio, n_trees):
+    trees = []
+    for i in range(n_trees):
+        sample = subsample(train, sample_ratio)
+        tree = build_tree(sample, max_depth, min_size)
+        trees.append(tree)
+    predictions = [bagging_predict(trees, row) for row in test]
+    return predictions
+
+
+# -------- User Input Section --------
+n = int(input("Enter number of data points: "))
+dataset = []
+
+print("\nEnter X (feature) and Y (0/1):")
+for i in range(n):
+    x = float(input(f"X[{i+1}]: "))
+    y = int(input(f"Y[{i+1}]: "))
+    dataset.append([x, y])
+
+max_depth = int(input("\nEnter max tree depth (e.g. 3): "))
+min_size = int(input("Enter min group size (e.g. 1): "))
+sample_ratio = float(input("Enter sample ratio for bagging (e.g. 0.8): "))
+n_trees = int(input("Enter number of trees (e.g. 5): "))
+
+# Train bagging model
+trees = []
+for i in range(n_trees):
+    sample = subsample(dataset, sample_ratio)
+    tree = build_tree(sample, max_depth, min_size)
+    trees.append(tree)
+
+# Predict
+x_new = float(input("\nEnter new X to predict: "))
+prediction = bagging_predict(trees, [x_new])
+print(f"\nPredicted Class (after bagging): {prediction}")
+
+OUTPUT:
+Enter number of data points: 4
+
+Enter X (feature) and Y (0/1):
+X[1]: 2
+Y[1]: 0
+X[2]: 1
+Y[2]: 1
+X[3]: 4
+Y[3]: 1
+X[4]: 6
+Y[4]: 0
+
+Enter max tree depth (e.g. 3): 3
+Enter min group size (e.g. 1): 4
+Enter sample ratio for bagging (e.g. 0.8): 0.2
+Enter number of trees (e.g. 5): 3
+
+Enter new X to predict: 3
+
+Predicted Class (after bagging): 1
+
+
+##########BOOSTING######
+import numpy as np
+
+# Sigmoid function for prediction
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+# AdaBoost implementation
+def adaboost_train(X, Y, n_estimators=5):
+    n = len(Y)
+    weights = np.ones(n) / n   # Initialize all sample weights equally
+    alphas = []
+    classifiers = []
+
+    for _ in range(n_estimators):
+        # Weighted threshold classifier (decision stump)
+        best_error, best_thresh, best_polarity = 1, None, 1
+        for thresh in np.unique(X):
+            for polarity in [1, -1]:
+                predictions = np.ones(n)
+                predictions[polarity * X < polarity * thresh] = -1
+                misclassified = weights[Y != predictions]
+                error = np.sum(misclassified)
+
+                if error < best_error:
+                    best_error = error
+                    best_thresh = thresh
+                    best_polarity = polarity
+
+        # Compute alpha (model weight)
+        alpha = 0.5 * np.log((1 - best_error) / (best_error + 1e-10))
+        alphas.append(alpha)
+        classifiers.append((best_thresh, best_polarity))
+
+        # Update sample weights
+        predictions = np.ones(n)
+        predictions[best_polarity * X < best_polarity * best_thresh] = -1
+        weights *= np.exp(-alpha * Y * predictions)
+        weights /= np.sum(weights)
+
+    return alphas, classifiers
+
+
+def adaboost_predict(X, alphas, classifiers):
+    final_pred = np.zeros(len(X))
+    for alpha, (thresh, polarity) in zip(alphas, classifiers):
+        predictions = np.ones(len(X))
+        predictions[polarity * X < polarity * thresh] = -1
+        final_pred += alpha * predictions
+    return np.sign(final_pred)
+
+
+# -------- User Input Section --------
+n = int(input("Enter number of data points: "))
+X = []
+Y = []
+
+print("\nEnter X (feature) and Y (class -1 or +1):")
+for i in range(n):
+    x = float(input(f"X[{i+1}]: "))
+    y = int(input(f"Y[{i+1}]: "))
+    X.append(x)
+    Y.append(y)
+
+X = np.array(X)
+Y = np.array(Y)
+
+n_estimators = int(input("\nEnter number of weak learners (e.g. 5): "))
+
+# Train AdaBoost
+alphas, classifiers = adaboost_train(X, Y, n_estimators)
+
+# Predict
+x_new = float(input("\nEnter new X to predict: "))
+y_pred = adaboost_predict(np.array([x_new]), alphas, classifiers)
+print(f"\nPredicted Class: {int(y_pred[0])}")
+
+OUTPUT: 
+Enter number of data points: 3
+
+Enter X (feature) and Y (class -1 or +1):
+X[1]: 1
+Y[1]: -1
+X[2]: 3
+Y[2]: +1
+X[3]: 4
+Y[3]: -1
+
+Enter number of weak learners (e.g. 5): 3
+
+Enter new X to predict: 2
+
+Predicted Class: -1
+
+###To implement SVM######
+import numpy as np
+
+# SVM training using Gradient Descent
+def train_svm(X, y, learning_rate=0.01, lambda_param=0.01, n_iters=1000):
+    n_samples, n_features = X.shape
+    weights = np.zeros(n_features)
+    bias = 0
+
+    for _ in range(n_iters):
+        for i, x_i in enumerate(X):
+            condition = y[i] * (np.dot(x_i, weights) - bias) >= 1
+            if condition:
+                weights -= learning_rate * (2 * lambda_param * weights)
+            else:
+                weights -= learning_rate * (2 * lambda_param * weights - np.dot(x_i, y[i]))
+                bias -= learning_rate * y[i]
+    return weights, bias
+
+
+# Predict function
+def predict(X, weights, bias):
+    linear_output = np.dot(X, weights) - bias
+    return np.sign(linear_output)
+
+
+# ----------- User Input Section -----------
+n = int(input("Enter number of data points: "))
+X = []
+Y = []
+
+print("\nEnter values (X1, X2, Y). For Y, use +1 or -1:")
+for i in range(n):
+    x1 = float(input(f"X1[{i+1}]: "))
+    x2 = float(input(f"X2[{i+1}]: "))
+    y = int(input(f"Y[{i+1}]: "))
+    X.append([x1, x2])
+    Y.append(y)
+
+X = np.array(X)
+Y = np.array(Y)
+
+# Train SVM
+weights, bias = train_svm(X, Y)
+
+# Display model
+print("\nTrained Weights:", weights)
+print("Trained Bias:", bias)
+
+# Prediction
+x1_new = float(input("\nEnter new X1: "))
+x2_new = float(input("Enter new X2: "))
+pred = predict(np.array([[x1_new, x2_new]]), weights, bias)
+
+print(f"\nPredicted Class: {int(pred[0])}")
+
+OUTPUT:
+Enter number of data points: 2
+
+Enter values (X1, X2, Y). For Y, use +1 or -1:
+X1[1]: 2
+X2[1]: 3
+Y[1]: -1
+X1[2]: 2
+X2[2]: 4
+Y[2]: +1
+
+Trained Weights: [-2.71946835  2.0313059 ]
+Trained Bias: 1.6700000000000013
+
+Enter new X1: 4
+Enter new X2: 2
+
+Predicted Class: -1
+
+##########GRAPH BASED CLUSTERING#####
+import numpy as np
+
+# Function to compute Euclidean distance
+def euclidean_distance(a, b):
+    return np.sqrt(np.sum((a - b) ** 2))
+
+# Build adjacency matrix (graph)
+def build_graph(X, threshold):
+    n = len(X)
+    graph = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i != j and euclidean_distance(X[i], X[j]) <= threshold:
+                graph[i][j] = 1
+    return graph
+
+# Depth First Search (DFS) to find connected components
+def dfs(node, visited, graph, cluster):
+    visited[node] = True
+    cluster.append(node)
+    for neighbor in range(len(graph)):
+        if graph[node][neighbor] == 1 and not visited[neighbor]:
+            dfs(neighbor, visited, graph, cluster)
+
+# Graph-based clustering
+def graph_clustering(X, threshold):
+    graph = build_graph(X, threshold)
+    visited = [False] * len(X)
+    clusters = []
+
+    for i in range(len(X)):
+        if not visited[i]:
+            cluster = []
+            dfs(i, visited, graph, cluster)
+            clusters.append(cluster)
+    return clusters
+
+
+# -------- User Input Section --------
+n = int(input("Enter number of data points: "))
+X = []
+
+print("\nEnter data points (x, y):")
+for i in range(n):
+    x = float(input(f"x[{i+1}]: "))
+    y = float(input(f"y[{i+1}]: "))
+    X.append([x, y])
+
+X = np.array(X)
+threshold = float(input("\nEnter distance threshold for edge connection: "))
+
+# Perform clustering
+clusters = graph_clustering(X, threshold)
+
+# Display clusters
+print("\nClusters formed:")
+for i, cluster in enumerate(clusters, 1):
+    print(f"Cluster {i}: {[f'P{j+1}' for j in cluster]}")
+
+OUTPUT:
+Enter number of data points: 5
+
+Enter data points (x, y):
+x[1]: 2
+y[1]: 4
+x[2]: 1
+y[2]: 9
+x[3]: 6
+y[3]: 4
+x[4]: 3
+y[4]: 0
+x[5]: 3
+y[5]: 1
+
+Enter distance threshold for edge connection: 5
+
+Clusters formed:
+Cluster 1: ['P1', 'P3', 'P4', 'P5']
+Cluster 2: ['P2']
+
+##############DBSCAN#########
+import numpy as np
+
+# Function to calculate Euclidean distance
+def euclidean_distance(a, b):
+    return np.sqrt(np.sum((a - b) ** 2))
+
+# Function to get all neighboring points within eps radius
+def region_query(X, point_idx, eps):
+    neighbors = []
+    for i in range(len(X)):
+        if euclidean_distance(X[point_idx], X[i]) <= eps:
+            neighbors.append(i)
+    return neighbors
+
+# Expand cluster function
+def expand_cluster(X, labels, point_idx, cluster_id, eps, min_pts):
+    neighbors = region_query(X, point_idx, eps)
+    if len(neighbors) < min_pts:
+        labels[point_idx] = -1  # mark as noise
+        return False
+    else:
+        labels[point_idx] = cluster_id
+        i = 0
+        while i < len(neighbors):
+            n_point = neighbors[i]
+            if labels[n_point] == -1:
+                labels[n_point] = cluster_id
+            elif labels[n_point] == 0:
+                labels[n_point] = cluster_id
+                n_neighbors = region_query(X, n_point, eps)
+                if len(n_neighbors) >= min_pts:
+                    neighbors += n_neighbors
+            i += 1
+        return True
+
+# Main DBSCAN algorithm
+def dbscan(X, eps, min_pts):
+    labels = [0] * len(X)  # 0 = unvisited
+    cluster_id = 0
+
+    for i in range(len(X)):
+        if labels[i] != 0:
+            continue
+        if expand_cluster(X, labels, i, cluster_id + 1, eps, min_pts):
+            cluster_id += 1
+    return labels
+
+
+# -------- User Input Section --------
+n = int(input("Enter number of data points: "))
+X = []
+
+print("\nEnter data points (x, y):")
+for i in range(n):
+    x = float(input(f"x[{i+1}]: "))
+    y = float(input(f"y[{i+1}]: "))
+    X.append([x, y])
+
+X = np.array(X)
+
+eps = float(input("\nEnter eps (neighborhood distance): "))
+min_pts = int(input("Enter minPts (minimum points to form cluster): "))
+
+# Run DBSCAN
+labels = dbscan(X, eps, min_pts)
+
+# Display results
+print("\nCluster Results:")
+for i in range(1, max(labels) + 1):
+    cluster_points = [f"P{j+1}" for j in range(len(labels)) if labels[j] == i]
+    print(f"Cluster {i}: {cluster_points}")
+
+noise_points = [f"P{j+1}" for j in range(len(labels)) if labels[j] == -1]
+if noise_points:
+    print(f"Noise points: {noise_points}")
+
+OUPUT: 
+Enter number of data points: 3
+
+Enter data points (x, y):
+x[1]: 2
+y[1]: 2
+x[2]: 4
+y[2]: 8
+x[3]: 1
+y[3]: 9
+
+Enter eps (neighborhood distance): 3
+Enter minPts (minimum points to form cluster): 3
+
+Cluster Results:
+Noise points: ['P1', 'P2', 'P3']
+
+
+###############To implement PCA###########
+import numpy as np
+
+# Step 1: Take input from user
+n = int(input("Enter number of data points: "))
+m = int(input("Enter number of features: "))
+
+X = []
+print("\nEnter the data points (space-separated):")
+for i in range(n):
+    X.append(list(map(float, input(f"Data point {i+1}: ").split())))
+
+X = np.array(X)
+
+# Step 2: Standardize the data (mean normalization)
+X_meaned = X - np.mean(X, axis=0)
+
+# Step 3: Calculate covariance matrix
+cov_mat = np.cov(X_meaned, rowvar=False)
+
+# Step 4: Calculate eigenvalues and eigenvectors
+eigen_values, eigen_vectors = np.linalg.eigh(cov_mat)
+
+# Step 5: Sort eigenvalues and eigenvectors in decreasing order
+sorted_index = np.argsort(eigen_values)[::-1]
+eigen_values = eigen_values[sorted_index]
+eigen_vectors = eigen_vectors[:, sorted_index]
+
+# Step 6: Choose number of principal components (k)
+k = int(input("\nEnter number of principal components to keep: "))
+
+# Step 7: Project data onto new feature space
+eigenvector_subset = eigen_vectors[:, 0:k]
+X_reduced = np.dot(X_meaned, eigenvector_subset)
+
+# Step 8: Display results
+print("\nOriginal Data Matrix:\n", X)
+print("\nCovariance Matrix:\n", cov_mat)
+print("\nEigenvalues:\n", eigen_values)
+print("\nEigenvectors:\n", eigen_vectors)
+print(f"\nData after reducing to {k} principal components:\n", X_reduced)
+
+OUTPUT:
+Enter number of data points: 3
+Enter number of features: 2
+
+Enter the data points (space-separated):
+Data point 1: 2.4 2.4 5.6
+Data point 2: 2.4 5.1 3.1
+Data point 3: 2.4 3.4 5.4
+
+Enter number of principal components to keep: 2
+
+#############LDA##########
+import numpy as np
+
+# Step 1: Input number of samples and features
+n = int(input("Enter number of samples: "))
+f = int(input("Enter number of features: "))
+
+# Step 2: Take feature values (X)
+print("\nEnter feature values (space-separated for each sample):")
+X = []
+for i in range(n):
+    row = list(map(float, input(f"Sample {i+1}: ").split()))
+    X.append(row)
+X = np.array(X)
+
+# Step 3: Take class labels
+print("\nEnter class labels (e.g., 0 or 1):")
+y = np.array([int(input(f"Label for sample {i+1}: ")) for i in range(n)])
+
+# Step 4: Compute class means
+classes = np.unique(y)
+mean_vectors = []
+for c in classes:
+    mean_vectors.append(np.mean(X[y == c], axis=0))
+    print(f"Mean Vector for class {c}: {mean_vectors[-1]}")
+
+# Step 5: Compute Within-class Scatter Matrix (SW)
+SW = np.zeros((f, f))
+for c, mv in zip(classes, mean_vectors):
+    class_scatter = np.zeros((f, f))
+    for row in X[y == c]:
+        row, mv = row.reshape(f, 1), mv.reshape(f, 1)
+        class_scatter += (row - mv).dot((row - mv).T)
+    SW += class_scatter
+
+# Step 6: Compute Between-class Scatter Matrix (SB)
+overall_mean = np.mean(X, axis=0).reshape(f, 1)
+SB = np.zeros((f, f))
+for c, mv in zip(classes, mean_vectors):
+    n_c = X[y == c].shape[0]
+    mv = mv.reshape(f, 1)
+    SB += n_c * (mv - overall_mean).dot((mv - overall_mean).T)
+
+# Step 7: Solve eigenvalue problem for SW⁻¹ * SB
+eig_vals, eig_vecs = np.linalg.eig(np.linalg.pinv(SW).dot(SB))
+
+
+# Step 8: Sort eigenvectors by decreasing eigenvalues
+idx = np.argsort(abs(eig_vals))[::-1]
+eig_vecs = eig_vecs[:, idx]
+
+# Step 9: Project data to LDA components
+num_components = int(input("\nEnter number of LDA components to keep: "))
+W = eig_vecs[:, :num_components]
+X_lda = X.dot(W)
+
+print("\nLDA Projection Matrix (W):")
+print(W)
+print("\nData after LDA transformation:")
+print(X_lda)
+
+OUTPUT: 
+Enter number of samples: 3
+Enter number of features: 2
+
+Enter feature values (space-separated for each sample):
+Sample 1: 2 4
+Sample 2: 5 6
+Sample 3: 7 8
+
+Enter class labels (e.g., 0 or 1):
+Label for sample 1: 1
+Label for sample 2: 1
+Label for sample 3: 0
+
+#############SVD###########
+import numpy as np
+
+# Step 1: Input matrix
+r = int(input("Enter number of rows: "))
+c = int(input("Enter number of columns: "))
+
+print("\nEnter the matrix values row-wise:")
+A = []
+for i in range(r):
+    row = list(map(float, input(f"Row {i+1}: ").split()))
+    A.append(row)
+
+A = np.array(A)
+print("\nOriginal Matrix A:")
+print(A)
+
+# Step 2: Perform SVD
+U, S, VT = np.linalg.svd(A)
+
+print("\nMatrix U (Left Singular Vectors):")
+print(U)
+
+print("\nSingular Values (S):")
+print(S)
+
+print("\nMatrix V^T (Right Singular Vectors Transposed):")
+print(VT)
+
+# Step 3: Reconstruct the original matrix
+S_matrix = np.zeros((r, c))
+np.fill_diagonal(S_matrix, S)
+A_reconstructed = np.dot(U, np.dot(S_matrix, VT))
+
+print("\nReconstructed Matrix (U * S * V^T):")
+print(np.round(A_reconstructed, 3))
+
+OUTPUT:
+Enter number of rows: 2
+Enter number of columns: 3
+
+Enter the matrix values row-wise:
+Row 1: 1 2 6
+Row 2: 3 7 8
+
+
+
+
